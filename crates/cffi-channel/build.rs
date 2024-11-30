@@ -7,14 +7,14 @@ fn main() {
   println!("cargo:rerun-if-changed=csrc");
 
   // Determine the make command based on platform
-  let cmd = format!("make -C '{}' ci.build", manifest_dir);
+  let cmd = format!("make -C '{}' -f Makefile.win.mk ci.build", manifest_dir);
   let (make_cmd, make_args) = if cfg!(windows) {
     (
       "pwsh",
       vec!["-NoProfile", "-NonInteractive", "-Command", &cmd],
     )
   } else {
-    ("make", vec!["-C", &manifest_dir, "ci.build"])
+    ("make", vec!["-C", &manifest_dir, "-f", "Makefile", "ci.build"])
   };
 
   // Run the make command

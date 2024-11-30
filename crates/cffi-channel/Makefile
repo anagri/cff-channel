@@ -1,16 +1,11 @@
 # Detect OS
-ifeq ($(OS),Windows_NT)
-  LIBNAME = callback.dll
-  LIBPREFIX =
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+  LIBNAME = libcallback.dylib
+  LIBPREFIX = lib
 else
-  UNAME_S := $(shell uname -s)
-  ifeq ($(UNAME_S),Darwin)
-    LIBNAME = libcallback.dylib
-    LIBPREFIX = lib
-  else
-    LIBNAME = libcallback.so
-    LIBPREFIX = lib
-  endif
+  LIBNAME = libcallback.so
+  LIBPREFIX = lib
 endif
 
 # Output paths
