@@ -91,7 +91,7 @@ mod tests {
   }
 
   #[allow(clippy::unnecessary_cast)]
-  extern "C" fn test_sync_channel_callback(
+  extern "C" fn sync_channel_callback(
     data: *const c_char,
     size: size_t,
     userdata: *mut c_void,
@@ -108,18 +108,52 @@ mod tests {
     }
   }
 
+  #[allow(clippy::unnecessary_cast)]
+  extern "C" fn async_channel_callback(
+    data: *const c_char,
+    size: size_t,
+    userdata: *mut c_void,
+  ) -> size_t {
+    let slice = unsafe { std::slice::from_raw_parts(data as *const u8, size) };
+    let response = String::from_utf8_lossy(slice).into_owned();
+    eprintln!("Received: {}", response);
+    let tx = unsafe { &mut *(userdata as *mut tokio::sync::mpsc::Sender<String>) }.clone();
+    tokio::spawn(async move {
+      if let Err(err) = tx.send(response.to_string()).await {
+        eprintln!("Error sending message to channel: {}", err);
+      }
+    });
+    size
+  }
+
   #[test]
-  fn test_callback() -> anyhow::Result<()> {
+  fn test_sync_channel_callback() -> anyhow::Result<()> {
     let library = DynamicLibrary::new(&get_lib_path())?;
     let input = CString::new("hello")?;
     let (mut tx, rx) = std::sync::mpsc::sync_channel::<String>(100);
     library.callback(
       input.as_ptr(),
-      test_sync_channel_callback,
+      sync_channel_callback,
       &mut tx as *mut _ as *mut c_void,
     )?;
     let response = rx.recv()?;
     assert_eq!(response, "this is a processed response");
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn test_async_channel_callback() -> anyhow::Result<()> {
+    let library = DynamicLibrary::new(&get_lib_path())?;
+    let input = CString::new("hello")?;
+    let (mut tx, mut rx) = tokio::sync::mpsc::channel::<String>(100);
+    library.callback(
+      input.as_ptr(),
+      async_channel_callback,
+      &mut tx as *mut _ as *mut c_void,
+    )?;
+    let response = rx.recv().await;
+    assert!(response.is_some());
+    assert_eq!(response.unwrap(), "this is a processed response");
     Ok(())
   }
 }
