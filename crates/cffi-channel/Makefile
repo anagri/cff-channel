@@ -14,7 +14,7 @@ OUTPUT_DIR = libs
 
 build:
 	cmake -S csrc -B $(BUILD_DIR)
-	cmake --build $(BUILD_DIR)
+	cmake --build $(BUILD_DIR) --config Release
 
 clean:
 	rm -rf $(BUILD_DIR)
