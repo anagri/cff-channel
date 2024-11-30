@@ -42,21 +42,9 @@ jobs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
     - name: Build
+      shell: ${{ runner.os == 'Windows' && 'pwsh' || 'bash' }}
       run: cargo build --verbose
-      shell: bash
-      if: ${{ matrix.os != 'windows-latest' }}
-
-    - name: Build
-      run: cargo build --verbose
-      shell: pwsh
-      if: ${{ matrix.os == 'windows-latest' }}
 
     - name: Run tests with coverage
+      shell: ${{ runner.os == 'Windows' && 'pwsh' || 'bash' }}
       run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
-      shell: bash
-      if: ${{ matrix.os != 'windows-latest' }}
-
-    - name: Run tests with coverage
-      run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
-      shell: pwsh
-      if: ${{ matrix.os == 'windows-latest' }}
